@@ -22,19 +22,18 @@ def average_slope_intercept(image, lines):
             left_fit.append((slope, intercept))
         else:
             right_fit.append((slope, intercept))
-    
-    left_line = np.array([0, 0, 0, 0])
-    right_line = np.array([0, 0, 0, 0])
 
-    if len(left_fit) > 0:
+    left_line = None
+    right_line = None
+
+    if left_fit:
         left_fit_average = np.average(left_fit, axis=0)
         left_line = make_coordinates(image, left_fit_average)
-    
-    if len(right_fit) > 0:
+    if right_fit:
         right_fit_average = np.average(right_fit, axis=0)
         right_line = make_coordinates(image, right_fit_average)
-    
-    return np.array([left_line, right_line])
+
+    return [left_line, right_line]
 
 def canny(image):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -49,10 +48,9 @@ def display_lines(image, lines):
     line_image = np.zeros_like(image)
     if lines is not None:
         for line in lines:
-            x1, y1, x2, y2 = line
-            if x1 == 0 and y1 == 0 and x2 == 0 and y2 == 0:
-                continue
-            cv2.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), 10)
+            if line is not None:
+                x1, y1, x2, y2 = line
+                cv2.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), 10)
     return line_image
 
 def region_of_interest(image):
@@ -66,9 +64,9 @@ def region_of_interest(image):
     masked_image = cv2.bitwise_and(image, mask)
     return masked_image
 
-cap = cv2.VideoCapture("solidWhiteRight.mp4")
+cap = cv2.VideoCapture("test1.mp4")
 
-while(cap.isOpened()):
+while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
         break
@@ -76,12 +74,11 @@ while(cap.isOpened()):
     canny_image = canny(frame)
     cropped_image = region_of_interest(canny_image)
     lines = cv2.HoughLinesP(cropped_image, 2, np.pi / 180, 100, np.array([]), minLineLength=40, maxLineGap=5)
-    if lines is not None:
-        averaged_lines = average_slope_intercept(frame, lines)
-    else:
-        averaged_lines = np.array([[0, 0, 0, 0], [0, 0, 0, 0]])
+    
+    averaged_lines = average_slope_intercept(frame, lines) if lines is not None else [None, None]
     line_image = display_lines(frame, averaged_lines)
     combo_image = cv2.addWeighted(frame, 0.8, line_image, 1, 1)
+    
     cv2.imshow("result", combo_image)
     
     if cv2.waitKey(1) & 0xFF == ord('q'):
