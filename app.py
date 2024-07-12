@@ -12,7 +12,7 @@ def detect_lane():
     if request.method == 'POST':
         # Execute ln.py
         subprocess.run(['python', 'ln.py'])
-        return 'Lane detection completed.'
+        return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
